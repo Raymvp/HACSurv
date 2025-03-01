@@ -11,20 +11,25 @@
   - Select the **weakest copula** as the *Outer copula*.
 
 ### Step 2: Conducting Survival Analysis Experiments
-- **Script:** `New_HACSurv_FramingHam_bached`
-  - **Note:** Set the paths to the inner and outer copula parameter files in the script before running.
+- **Reproducing HACSurv:**  
+  Run `New_HACSurv_FramingHam_bached.py` after setting the paths to the inner and outer copula parameter files.
 
+- **Reproducing HACSurv (Symmetry):**  
+  Set the appropriate paths in the script and run `New_SymHACSurv_FramingHam_bached.py`.
+
+- **Reproducing HACSurv (Independent):**  
+  In the optimizer configuration, comment out the following line:
+  ```python
+  {"params": model.phi.parameters(), "lr": 5e-4}
 ## 2. Synthetic Dataset
 
-You have two options:
-
-### Option A: Use Pre-trained HAC Checkpoint
+### Use Pre-trained HAC Checkpoint
 - Run the following command:
   ```bash
   python HACSurv_competing_syn.py
   ```
 
-### Option B: Learn HAC Parameters Yourself
+### Learn HAC Parameters Yourself
 1. **Step 1:** Run `Synthetic_competing_learn_step1_copula.py` to capture the copula between events and censoring.
 2. **Step 2:** Use `competing_syn_get_HAC.ipynb` to:
    - Select two strongly dependent copulas (typically 01 and 23) as the inner copula.
@@ -52,10 +57,6 @@ You have two options:
   2. Since events 1, 3, and 5 (related to respiratory diseases) show strong dependency, an inner copula is learned to capture their dependency.
      - *Note: Code for this part is still being organized and will be released later.*
 
-## License
-
-Specify your license here (e.g., MIT).
-
 ## Citation
 
 If you find this work useful, please consider citing our paper:
@@ -68,10 +69,3 @@ If you find this work useful, please consider citing our paper:
 }
 ```
 
-## Contact
-
-For any questions or issues, please open an issue on GitHub.
-
----
-
-This README provides a brief yet comprehensive guide to setting up and reproducing the experiments from our paper.
