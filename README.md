@@ -61,11 +61,13 @@
 
 If you find this work useful, please consider citing our paper:
 ```bibtex
-@article{hac_surv,
-  title={HACSurv: A Hierarchical Copula-based Approach for Survival Analysis with Dependent Competing Risks},
-  author={...},
-  journal={...},
-  year={2025}
+@inproceedings{
+liu2025hacsurv,
+title={{HACS}urv: A Hierarchical Copula-based Approach for Survival Analysis with Dependent Competing Risks},
+author={Xin Liu and Weijia Zhang and Min-Ling Zhang},
+booktitle={The 28th International Conference on Artificial Intelligence and Statistics},
+year={2025},
+url={https://openreview.net/forum?id=R2Xaxv4ADz}
 }
 ```
 
