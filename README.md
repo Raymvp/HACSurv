@@ -2,10 +2,6 @@
 
 **PyTorch implementation for the paper:** [HACSurv: A Hierarchical Copula-based Approach for Survival Analysis with Dependent Competing Risks](https://arxiv.org/abs/2410.15180) (AISTATS 2025).
 
-## Overview
-
-This repository contains the PyTorch implementation of HACSurv, which uses a hierarchical copula-based model for survival analysis with dependent competing risks. Experiments are provided on the Framingham, Synthetic, and MIMIC-III datasets.
-
 ## 1. Framingham Dataset
 
 ### Step 1: Learning the Hierarchical Archimedean Copula (HAC)
