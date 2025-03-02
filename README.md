@@ -46,16 +46,40 @@
     {"params": model.phi.parameters(), "lr": 5e-4}
     ```
 
+
 ## 3. MIMIC-III Dataset
 
-- **Direct Experimentation:** Run the following command to use our pre-trained HAC checkpoint:
+- **Direct Experimentation:**  
+  Run the following command to use our pre-trained HAC checkpoint:
+  
   ```bash
   python New_HACSurv_MIMIC.py
   ```
-- **Learning HAC Structure:**
-  1. Run `MIMIC_copula.py`.
-  2. Since events 1, 3, and 5 (related to respiratory diseases) show strong dependency, an inner copula is learned to capture their dependency.
-     - *Note: Code for this part is still being organized and will be released later.*
+
+- **Learning HAC Structure:**  
+  i. Run `MIMIC_copula.py` to learn the copula between events and censoring.  
+  ii. Since events 1, 3, and 5 (related to respiratory diseases) show strong dependency, an inner copula is learned to capture their dependency. Use `MIMIC_learn_HAC.ipynb` to learn the copula for events 1, 3, and 5 (copula 135) and to learn the inner copula 135 and 24.  
+  iii. Experiment: Update the copula checkpoint path in `New_HACSurv_MIMIC.py` and perform the survival analysis experiments.
+  
+- **Reproducing HACSurv (Symmetry) and HACSurv (Independent) Results:**  
+  Run the following command:
+  
+  ```bash
+  python New_HACSurv_Sym__MIMIC.py
+  ```
+
+---
+
+## 4. Specifying a Known Copula for Survival Analysis
+
+Some practitioners may wish to specify a known copula for survival analysis. Using our HACSurv framework, this is achievable.  
+First, you can use the copula toolbox to sample from your specified copula. Then, use MLE to learn the copula network from these samples. Finally, freeze the HAC network to perform survival analysis.
+
+If you have any questions or are interested in collaboration, feel free to contact:  
+xliu@seu.edu.cn
+
+---
+
 
 ## Citation
 
