@@ -1185,47 +1185,92 @@ class HACSurv_3D_Sym_shared(nn.Module):
         # #以下，shared embedding
         # self.shared_embedding = nn.Identity()
 
-    def forward(self, x, t, c, max_iter = 2000):
-        # print(c)
+    # def forward(self, x, t, c, max_iter = 2000):
+    #     # print(c)
+    #     x_shared = self.shared_embedding(x)
+    #     S_E1, density_E1 = self.sumo_e1(x_shared, t, gradient = True)
+    #     S_E1 = S_E1.squeeze()
+    #     event1_log_density = torch.log(density_E1).squeeze()
+    #     S_E2, density_E2 = self.sumo_e2(x_shared, t, gradient = True)
+    #     S_E2 = S_E2.squeeze()
+    #     event2_log_density = torch.log(density_E2).squeeze()        
+
+    #     # S_C = survival(t, self.shape_c, self.scale_c, x_beta_c)
+    #     S_C, density_C = self.sumo_c(x_shared, t, gradient = True)
+    #     S_C = S_C.squeeze()
+    #     censoring_log_density = torch.log(density_C).squeeze()
+    #     # Check if Survival Function of Event and Censoring are in [0,1]
+    #     assert (S_E1 >= 0.).all() and (
+    #         S_E1 <= 1.+1e-10).all(), "t %s, output %s" % (t, S_E1, )
+    #     assert (S_E2 >= 0.).all() and (
+    #         S_E2 <= 1.+1e-10).all(), "t %s, output %s" % (t, S_E2, )
+        
+    #     assert (S_C >= 0.).all() and (
+    #         S_C <= 1.+1e-10).all(), "t %s, output %s" % (t, S_C, )      
+          
+    #     # Partial derivative of Copula using ACNet
+    #     y = torch.stack([S_E1,S_E2, S_C], dim=1)
+    #     inverses = self.phi_inv(y, max_iter = max_iter)
+    #     cdf = self.phi(inverses.sum(dim=1))
+    #     # TODO: Only take gradients with respect to one dimension of y at at time
+    #     cur1 = torch.autograd.grad(
+    #         cdf.sum(), y, create_graph=True)[0][:, 0]
+        
+    #     cur2 = torch.autograd.grad(
+    #         cdf.sum(), y, create_graph=True)[0][:, 1]      
+    #     cur3 = torch.autograd.grad(
+    #         cdf.sum(), y, create_graph=True)[0][:, 2]      
+       
+    #     logL = (c==1) *event1_log_density + (c==1) * torch.log(cur1) + (c==2) *event2_log_density + (c==2) * torch.log(cur2)+(c==0) *censoring_log_density + (c==0) * torch.log(cur3)     #density L2
+    #     # logL = (c==1) *event1_log_density + (c==1) * torch.log(cur1) + (c==3) *event2_log_density + (c==3) * torch.log(cur2)+(c==5) *censoring_log_density + (c==5) * torch.log(cur3)     #density L2
+    #     return torch.sum(logL)
+
+    def forward(self, x, t, c, max_iter=2000, selected_indicators=[1, 2, 0]):
+        """
+        参数:
+          x: 输入特征
+          t: 时间变量
+          c: 指示变量，表示每个样本的事件类型
+          selected_indicators: 指定每个模型分支对应的事件标识，默认[1,2,0]，
+                                其中 1 对应事件1，2 对应事件2，0 对应 censoring
+        """
         x_shared = self.shared_embedding(x)
-        S_E1, density_E1 = self.sumo_e1(x_shared, t, gradient = True)
+        
+        # 计算生存函数和密度
+        S_E1, density_E1 = self.sumo_e1(x_shared, t, gradient=True)
         S_E1 = S_E1.squeeze()
         event1_log_density = torch.log(density_E1).squeeze()
-        S_E2, density_E2 = self.sumo_e2(x_shared, t, gradient = True)
+        
+        S_E2, density_E2 = self.sumo_e2(x_shared, t, gradient=True)
         S_E2 = S_E2.squeeze()
-        event2_log_density = torch.log(density_E2).squeeze()        
+        event2_log_density = torch.log(density_E2).squeeze()
 
-        # S_C = survival(t, self.shape_c, self.scale_c, x_beta_c)
-        S_C, density_C = self.sumo_c(x_shared, t, gradient = True)
+        S_C, density_C = self.sumo_c(x_shared, t, gradient=True)
         S_C = S_C.squeeze()
         censoring_log_density = torch.log(density_C).squeeze()
-        # Check if Survival Function of Event and Censoring are in [0,1]
-        assert (S_E1 >= 0.).all() and (
-            S_E1 <= 1.+1e-10).all(), "t %s, output %s" % (t, S_E1, )
-        assert (S_E2 >= 0.).all() and (
-            S_E2 <= 1.+1e-10).all(), "t %s, output %s" % (t, S_E2, )
-        
-        assert (S_C >= 0.).all() and (
-            S_C <= 1.+1e-10).all(), "t %s, output %s" % (t, S_C, )      
-          
-        # Partial derivative of Copula using ACNet
-        y = torch.stack([S_E1,S_E2, S_C], dim=1)
-        inverses = self.phi_inv(y, max_iter = max_iter)
+
+        # 验证生存函数是否在[0, 1]之间
+        assert (S_E1 >= 0.).all() and (S_E1 <= 1. + 1e-10).all(), "t %s, output %s" % (t, S_E1)
+        assert (S_E2 >= 0.).all() and (S_E2 <= 1. + 1e-10).all(), "t %s, output %s" % (t, S_E2)
+        assert (S_C >= 0.).all() and (S_C <= 1. + 1e-10).all(), "t %s, output %s" % (t, S_C)
+
+        # Copula 部分导数计算
+        y = torch.stack([S_E1, S_E2, S_C], dim=1)
+        inverses = self.phi_inv(y, max_iter=max_iter)
         cdf = self.phi(inverses.sum(dim=1))
-        # TODO: Only take gradients with respect to one dimension of y at at time
-        cur1 = torch.autograd.grad(
-            cdf.sum(), y, create_graph=True)[0][:, 0]
+
+        cur1 = torch.autograd.grad(cdf.sum(), y, create_graph=True)[0][:, 0]
+        cur2 = torch.autograd.grad(cdf.sum(), y, create_graph=True)[0][:, 1]
+        cur3 = torch.autograd.grad(cdf.sum(), y, create_graph=True)[0][:, 2]
+
+        # 根据 selected_indicators 进行 logL 的计算
+        indicator_1, indicator_2, indicator_3 = selected_indicators
+        logL = (c == indicator_1) * (event1_log_density + torch.log(cur1)) + \
+               (c == indicator_2) * (event2_log_density + torch.log(cur2)) + \
+               (c == indicator_3) * (censoring_log_density + torch.log(cur3))
         
-        cur2 = torch.autograd.grad(
-            cdf.sum(), y, create_graph=True)[0][:, 1]      
-        cur3 = torch.autograd.grad(
-            cdf.sum(), y, create_graph=True)[0][:, 2]      
-        # print(cur1.shape)
-        # logL = event_log_density + c * torch.log(cur1) + censoring_log_density + (1-c) * torch.log(cur2)
-        # logL = event1_log_density + (c==1) * torch.log(cur1) + event2_log_density + (c==2) * torch.log(cur2)+censoring_log_density + (c==0) * torch.log(cur3)  #density L1
-        logL = (c==1) *event1_log_density + (c==1) * torch.log(cur1) + (c==2) *event2_log_density + (c==2) * torch.log(cur2)+(c==0) *censoring_log_density + (c==0) * torch.log(cur3)     #density L2
-        # logL = (c==1) *event1_log_density + (c==1) * torch.log(cur1) + (c==3) *event2_log_density + (c==3) * torch.log(cur2)+(c==5) *censoring_log_density + (c==5) * torch.log(cur3)     #density L2
         return torch.sum(logL)
+        
         ###############旧的预测代码，参考Survival For compared 
     def compute_intermediate_quantities(self, t, x, max_iter=2000):
         with torch.autograd.set_detect_anomaly(True):
