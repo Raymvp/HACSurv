@@ -5,6 +5,7 @@
 <div align="center">
   <img src="github_HACSurv.png" width="700px" />
 </div>
+
 ## 1. Framingham Dataset
 
 ### Step 1: Learning the Hierarchical Archimedean Copula (HAC)
